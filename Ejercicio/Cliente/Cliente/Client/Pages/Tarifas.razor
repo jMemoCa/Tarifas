@@ -1,0 +1,98 @@
+﻿@page "/"
+@page "/Tarifas"
+@using System.Globalization
+@inject HttpClient cliente
+<h3>Tarifas</h3>
+
+
+<div class="row">
+    <div class="col-1">
+        <label>Costo:</label>
+    </div>
+    <div class="col-4">
+
+        <select class="form-control" @bind="@tipoCosto" required>
+             <option  >  </option>
+
+            @foreach (var tipo in tipos)
+            {
+                <option value="@tipo"> @tipo </option>
+            }
+        </select>
+
+    </div>
+
+    <div class="col-1">
+        <label>Cantidad a obtener:</label>
+    </div>
+    <div class="col-4">
+        <select class="form-control" @bind="@numeroRegistros" required>
+
+               <option >   </option>
+            @foreach (var cantidad in cantidades)
+            {
+                <option value="@cantidad"> @cantidad </option>
+            }
+        </select>
+        
+       
+    </div>
+    <div class="col-1"><button class=" btn-primary btn" @onclick=CargarTarifas>Buscar</button></div>
+</div>
+
+<h5 class="alert-warning" >@mensaje</h5>
+@if (cargando)
+{
+
+<div class="loader">Loading...</div>
+}
+else if (tarifas.Any())
+{
+    <p>Registros obtenidos: @tarifas.Count  </p>
+    <div class="row">
+        @foreach (var tarifa in tarifas)
+        {
+
+
+            <div class="card m-1" style="width: 18rem;">
+                <img class="card-img-top" src="@tarifa.imagenDTO" alt="Card image cap">
+                <div class="card-body">
+                    <h5 class="card-title">@tarifa.hotelDTO</h5>
+                    <p class="card-text">Habitaciones: @tarifa.habitacionesDTO </p>
+                    <p class="card-text">$@string.Format(CultureInfo.GetCultureInfo("en-US"), "{0:#, ###.00}", tarifa.costoDTO )  </p>
+                    <a href="#" class="btn btn-primary">Reservar</a>
+                </div>
+            </div>
+
+
+        }
+    </div>
+}
+
+
+@code {
+    int numeroRegistros { set; get; }
+    string tipoCosto { set; get; }
+    List<int> cantidades = new List<int>() { 10, 20, 50, 100 };
+    List<string> tipos = new List<string>() { "Más costosas", "Más baratas" };
+    public List<TarifaDTO> tarifas = new List<TarifaDTO>();
+    bool cargando = false;
+    public string mensaje { get; set; }
+    private async Task<bool> CargarTarifas()
+    {
+
+        if (String.IsNullOrEmpty(tipoCosto) || numeroRegistros==0)
+        {
+            mensaje = "Debe seleccionar criterios de búsqueda.";
+        } else {
+            mensaje = "";
+            cargando = true;
+
+            tarifas = await cliente.GetFromJsonAsync<List<TarifaDTO>>($"Tarifas/ObtenerTarifas/{tipoCosto}/{numeroRegistros}");
+
+            cargando = false;
+        }
+
+        return cargando;
+    }
+}
